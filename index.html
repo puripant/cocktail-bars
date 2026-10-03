@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cocktail Bars</title>
+<meta name="description" content="Every IBA cocktail recipe as one stacked bar of its ingredients. Compare proportions, filter by ingredient type, and see how recipes have changed.">
+<meta name="author" content="Puripant Ruchikachorn">
+<link rel="canonical" href="https://puripant.github.io/cocktail-bars/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Cocktail Bars">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://puripant.github.io/cocktail-bars/">
+<meta property="og:description" content="Every IBA cocktail recipe as one stacked bar of its ingredients.">
+<meta property="og:image" content="https://puripant.github.io/cocktail-bars/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Cocktail Bars: eight cocktails, each drawn as a stacked bar coloured by ingredient type.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cocktail Bars">
+<meta name="twitter:description" content="Every IBA cocktail recipe as one stacked bar of its ingredients.">
+<meta name="twitter:image" content="https://puripant.github.io/cocktail-bars/og.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: a back-bar spec sheet. Dense multi-column grid of recipes, each one a name line, one stacked bar, one ingredient line. */
+:root {
+  --bg: #f7f8f5;
+  --surface: #fcfcfb;
+  --ink: #10120f;
+  --ink-2: #4f524b;
+  --muted: #84877e;
+  --rule: #dfe1d9;
+  --track: #eceee7;
+  --c-S: #2a78d6; --c-L: #eb6834; --c-M: #1baf7a; --c-C: #eda100;
+  --c-Y: #e87ba4; --c-J: #008300; --c-D: #4a3aa7; --c-W: #e34948;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111210; --surface: #1a1a19; --ink: #f6f6f2; --ink-2: #c3c4bb; --muted: #8b8d85;
+    --rule: #2d2e2b; --track: #262724;
+    --c-S: #3987e5; --c-L: #d95926; --c-M: #199e70; --c-C: #c98500;
+    --c-Y: #d55181; --c-J: #008300; --c-D: #9085e9; --c-W: #e66767;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111210; --surface: #1a1a19; --ink: #f6f6f2; --ink-2: #c3c4bb; --muted: #8b8d85;
+  --rule: #2d2e2b; --track: #262724;
+  --c-S: #3987e5; --c-L: #d95926; --c-M: #199e70; --c-C: #c98500;
+  --c-Y: #d55181; --c-J: #008300; --c-D: #9085e9; --c-W: #e66767;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.4; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 48px; display: flex; flex-direction: column; gap: 18px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 40px; line-height: 1; letter-spacing: .01em; text-transform: uppercase; margin: 0; text-wrap: balance; }
+.lede { color: var(--ink-2); max-width: 65ch; margin: 0; }
+.lede a { color: inherit; }
+
+.bar-tools { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 10px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.group { display: flex; align-items: center; gap: 8px; }
+.group > span, .group > label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; font-size: 13px; color: var(--ink-2); background: none; border: 0; padding: 4px 10px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+#list { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 6px; max-width: 100%; }
+#q { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 10px; width: 170px; }
+button:focus-visible, #q:focus-visible, #list:focus-visible, .s:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; margin-left: auto; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { font: inherit; font-size: 13px; color: var(--ink-2); background: none; border: 1px solid transparent; border-radius: 999px; padding: 2px 9px 2px 7px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.chip:hover { border-color: var(--rule); }
+.chip[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); background: var(--surface); }
+.sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.note { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; }
+.hatch { background-image: repeating-linear-gradient(135deg, transparent 0 3px, var(--surface) 3px 5px); }
+.note .sw { background-color: var(--muted); width: 18px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 0 28px; }
+.card { padding-block: 9px 10px; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.top { display: flex; align-items: baseline; gap: 8px; }
+.name { font-family: var(--display); font-weight: 600; font-size: 19px; line-height: 1.1; letter-spacing: .03em; text-transform: uppercase; margin: 0; }
+.kind { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.vol { margin-left: auto; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.track { height: 14px; }
+.bar { display: flex; gap: 2px; height: 100%; transition: width .25s ease; }
+.s { height: 100%; min-width: 2px; flex: none; transition: opacity .15s; }
+.s:first-child { border-radius: 3px 0 0 3px; }
+.s:last-child { border-radius: 0 3px 3px 0; }
+.s:only-child { border-radius: 3px; }
+.grid.hl .s:not(.on) { opacity: .22; }
+.ing { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.45; }
+.ing .it { white-space: nowrap; }
+.ing .dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 4px; vertical-align: 1px; }
+.ing b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ing .tr { color: var(--muted); font-style: italic; }
+.grid.cmp { grid-template-columns: 1fr; }
+.pair { display: grid; grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1fr); gap: 8px 28px; align-items: start; padding-block: 11px 12px; border-bottom: 1px solid var(--rule); }
+.pair .head { display: flex; flex-direction: column; gap: 3px; }
+.pair .diff { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.pair .diff.same { color: var(--muted); }
+.side { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.side .lab { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.side .lab .vol { font-size: 12px; letter-spacing: 0; text-transform: none; }
+@media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.empty { color: var(--muted); padding-block: 24px; }
+
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12.5px; padding: 6px 9px; border-radius: 6px; max-width: 240px; line-height: 1.35; }
+#tip b { font-weight: 600; }
+#tip span { opacity: .75; }
+footer { color: var(--muted); font-size: 12px; max-width: 75ch; }
+footer a { color: inherit; }
+@media (max-width: 520px) { h1 { font-size: 32px; } .count { margin-left: 0; } #q { width: 140px; } }
+@media (prefers-reduced-motion: reduce) { .bar, .s { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Cocktail Bars</h1>
+    <p class="lede">IBA cocktails, each drawn as one bar. Switch between the current official list and the older Information is Beautiful sheet. Segment width is the ingredient's share of the pour, in centilitres. Dashes, garnishes and muddled solids have no volume, so they are listed after the bar.</p>
+  </header>
+
+  <div class="bar-tools">
+    <div class="controls">
+      <div class="group"><label for="list">List</label>
+        <select id="list">
+          <option value="iba">IBA official site, 2026 (102)</option>
+          <option value="iib">Information is Beautiful sheet (77)</option>
+          <option value="cmp">Compare both (63 shared)</option>
+        </select>
+      </div>
+      <div class="group"><span>Bar width</span>
+        <div class="seg" id="mode">
+          <button type="button" data-v="share" aria-pressed="true">Proportion</button>
+          <button type="button" data-v="vol" aria-pressed="false">Volume</button>
+        </div>
+      </div>
+      <div class="group"><span>Sort</span>
+        <div class="seg" id="sort">
+          <button type="button" data-v="name" aria-pressed="true">A–Z</button>
+          <button type="button" data-v="size" aria-pressed="false">Size</button>
+          <button type="button" data-v="share" aria-pressed="false" id="sortShare">Spirit share</button>
+          <button type="button" data-v="diff" aria-pressed="false" id="sortDiff" hidden>Difference</button>
+        </div>
+      </div>
+      <input id="q" type="search" placeholder="Name or ingredient" aria-label="Search by name or ingredient">
+      <span class="count" id="count"></span>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div id="tip" hidden></div>
+
+  <footer>
+    The IBA list is taken from the recipe pages on <a href="https://iba-world.com/cocktails/all-cocktails/">iba-world.com</a>, converted from millilitres. The other list is the <a href="https://docs.google.com/spreadsheets/d/1TIYjGZBCVy8qC0SSa4wv3ztgRc-MDUANuLegEBBuK0U/edit?gid=0">IBA cocktail sheet compiled by Information is Beautiful</a>, transcribed as listed, with unitless quantities read as centilitres. Where a recipe says "top with" or "splash", or measures in spoons or eggs, the amount is an estimate and the segment is hatched.
+  </footer>
+</div>
+
+<script>
+const CLASSES = [
+  ["S", "Spirit"], ["L", "Liqueur & amaro"], ["M", "Soda & mixer"], ["C", "Lemon & lime"],
+  ["Y", "Syrup"], ["J", "Juice"], ["D", "Cream, egg & coffee"], ["W", "Wine & vermouth"]
+];
+const ORDER = Object.fromEntries(CLASSES.map((c, i) => [c[0], i]));
+const LABEL = Object.fromEntries(CLASSES);
+
+// [name, sort of drink, glass, method, [[ingredient, class, cl, estimated?]], [unmeasured extras]]
+const IIB = [
+["Alexander","After dinner","cocktail","shake & strain",[["Cognac","S",3],["Crème de cacao","L",3],["Fresh cream","D",3]],["nutmeg"]],
+["Americano","Before dinner","old-fashioned","mix with ice",[["Campari","L",3],["Red vermouth","W",3],["Soda","M",3,1]],[]],
+["Angel Face","All day","cocktail","shake & strain",[["Gin","S",3],["Apricot brandy","L",3],["Calvados","S",3]],[]],
+["Aviation","All day","cocktail","shake & strain",[["Gin","S",4.5],["Maraschino","L",1.5],["Lemon juice","C",1.5]],[]],
+["B52","After dinner","shot","layer",[["Kahlúa","L",2],["Baileys Irish Cream","L",2],["Grand Marnier","L",2]],[]],
+["Bacardi","Before dinner","cocktail","shake & strain",[["White rum","S",4.5],["Lime juice","C",2],["Grenadine","Y",1]],[]],
+["Barracuda","Sparkling","cocktail","",[["Gold rum","S",4.5],["Galliano","L",1.5],["Pineapple juice","J",6],["Prosecco","W",4,1]],["dash of lime juice"]],
+["Bellini","Sparkling","wine glass","stir",[["Prosecco","W",10],["Peach purée","J",5]],[]],
+["Between the Sheets","All day","cocktail","shake & strain",[["White rum","S",3],["Cognac","S",3],["Triple sec","L",3],["Lemon juice","C",2]],[]],
+["Black Russian","After dinner","old-fashioned","stir",[["Vodka","S",5],["Coffee liqueur","L",2]],[]],
+["Bloody Mary","Longdrink","highball","stir",[["Vodka","S",4.5],["Tomato juice","J",9],["Lemon juice","C",1.5]],["2–3 dashes Worcestershire","Tabasco","celery salt","pepper"]],
+["Bramble","All day","rocks","stir",[["Gin","S",4],["Lemon juice","C",1.5],["Sugar syrup","Y",1],["Blackberry liqueur","L",1.5]],[]],
+["Caipirinha","All day","old-fashioned","muddle",[["Cachaça","S",5]],["half a lime in wedges","2 tsp sugar"]],
+["Casino","All day","cocktail","shake & strain",[["Old Tom gin","S",4],["Maraschino","L",1],["Orange bitters","L",1],["Lemon juice","C",1]],[]],
+["Champagne Cocktail","Sparkling","flute","",[["Champagne","W",9],["Cognac","S",1]],["2 dashes Angostura","sugar cube"]],
+["Clover Club","All day","cocktail","shake & strain",[["Gin","S",4.5],["Raspberry syrup","Y",1.5],["Lemon juice","C",1.5]],["few drops egg white"]],
+["Cosmopolitan","All day","cocktail","shake & strain",[["Citron vodka","S",4],["Cointreau","L",1.5],["Lime juice","C",1.5],["Cranberry juice","J",3]],[]],
+["Cuba Libre","Longdrink","highball","",[["White rum","S",5],["Cola","M",12],["Lime juice","C",1]],[]],
+["Daiquiri","Before dinner","cocktail","shake & strain",[["White rum","S",4.5],["Lime juice","C",2.5],["Simple syrup","Y",1.5]],[]],
+["Dark 'n' Stormy","Longdrink","highball","pour",[["Dark rum","S",6],["Ginger beer","M",10]],[]],
+["Derby","All day","cocktail","stir & strain",[["Gin","S",6]],["2 drops peach bitters","2 mint leaves"]],
+["Dirty Martini","Before dinner","martini","stir & strain",[["Vodka","S",6],["Dry vermouth","W",1],["Olive brine","J",1]],[]],
+["Dry Martini","Before dinner","martini","stir & strain",[["Gin","S",6],["Dry vermouth","W",1]],["lemon peel oil"]],
+["Espresso Martini","After dinner","cocktail","shake & strain",[["Vodka","S",5],["Kahlúa","L",1],["Espresso","D",3,1]],["sugar syrup to taste"]],
+["French 75","Sparkling","flute","shake & strain",[["Gin","S",3],["Lemon juice","C",1.5],["Champagne","W",6]],["2 dashes sugar syrup"]],
+["French Connection","After dinner","old-fashioned","stir",[["Cognac","S",3.5],["DiSaronno","L",3.5]],[]],
+["French Martini","Before dinner","cocktail","stir & strain",[["Vodka","S",4.5],["Raspberry liqueur","L",1.5],["Pineapple juice","J",1.5]],[]],
+["Gin Fizz","Longdrink","tumbler","shake",[["Gin","S",4.5],["Lemon juice","C",3],["Sugar syrup","Y",1],["Soda water","M",8]],[]],
+["God Father","After dinner","old-fashioned","stir",[["Scotch","S",3.5],["DiSaronno","L",3.5]],[]],
+["God Mother","After dinner","old-fashioned","stir",[["Vodka","S",3.5],["DiSaronno","L",3.5]],[]],
+["Golden Dream","After dinner","cocktail","shake & strain",[["Galliano","L",2],["Triple sec","L",2],["Orange juice","J",2],["Fresh cream","D",1]],[]],
+["Grasshopper","After dinner","cocktail","shake & strain",[["Crème de cacao (white)","L",3],["Crème de menthe (green)","L",3]],[]],
+["Harvey Wallbanger","All day","highball","stir",[["Vodka","S",4.5],["Galliano","L",1.5],["Orange juice","J",9]],[]],
+["Hemingway Special","All day","double cocktail","shake & strain",[["White rum","S",6],["Grapefruit juice","J",4],["Maraschino","L",1.5],["Lime juice","C",1.5]],[]],
+["Horse's Neck","Longdrink","highball","stir",[["Cognac","S",4],["Ginger ale","M",12]],["dash of Angostura (optional)"]],
+["Irish Coffee","Hot drink","mug","warm & pour",[["Irish whiskey","S",4],["Hot coffee","D",9],["Fresh cream","D",3]],["1 tsp brown sugar"]],
+["John Collins","Longdrink","highball","stir",[["Gin","S",4.5],["Lemon juice","C",3],["Sugar syrup","Y",1.5],["Soda water","M",6]],["dash of Angostura"]],
+["Kamikaze","All day","cocktail","shake & strain",[["Vodka","S",3],["Triple sec","L",3],["Lime juice","C",3]],[]],
+["Kir","Before dinner","champagne glass","pour",[["Dry white wine","W",9],["Crème de cassis","L",1]],[]],
+["Lemon Drop Martini","All day","cocktail","shake & strain",[["Citron vodka","S",2.5],["Triple sec","L",2],["Lemon juice","C",1.5]],["sugar rim"]],
+["Long Island Iced Tea","Longdrink","highball","stir",[["Tequila","S",1.5],["Vodka","S",1.5],["White rum","S",1.5],["Gin","S",1.5],["Triple sec","L",1.5],["Lemon juice","C",2.5],["Gomme syrup","Y",3]],["dash of cola"]],
+["Mai-Tai","Longdrink","highball","shake & strain",[["White rum","S",4],["Dark rum","S",2],["Orange curaçao","L",1.5],["Orgeat syrup","Y",1.5],["Lime juice","C",1]],[]],
+["Manhattan","Before dinner","cocktail","shake & strain",[["Rye whiskey","S",5],["Red vermouth","W",2]],["dash of Angostura"]],
+["Margarita","All day","cocktail","shake & strain",[["Tequila","S",3.5],["Cointreau","L",2],["Lime juice","C",1.5]],["salt rim"]],
+["Mary Pickford","All day","large cocktail","shake & strain",[["White rum","S",6],["Maraschino","L",1],["Pineapple juice","J",6],["Grenadine","Y",1]],[]],
+["Mimosa","Sparkling","flute","stir",[["Champagne","W",7.5],["Orange juice","J",7.5]],[]],
+["Mint Julep","Longdrink","highball","muddle & stir",[["Bourbon","S",6],["Water","M",1,1]],["4 mint sprigs","1 tsp powdered sugar"]],
+["Mojito","Longdrink","highball","muddle",[["White Cuban rum","S",4],["Lime juice","C",3],["Soda water","M",4,1]],["6 mint sprigs","2 tsp white sugar"]],
+["Monkey Gland","All day","cocktail","shake & strain",[["Gin","S",5],["Orange juice","J",3]],["2 drops absinthe","2 drops grenadine"]],
+["Moscow Mule","Longdrink","highball","",[["Vodka","S",4.5],["Ginger beer","M",12],["Lime juice","C",0.5]],["slice of lime"]],
+["Negroni","Before dinner","old-fashioned","stir",[["Gin","S",3],["Campari","L",3],["Sweet red vermouth","W",3]],[]],
+["Old Fashioned","Before dinner","old-fashioned","build",[["Bourbon or rye","S",4.5]],["2 dashes Angostura","sugar cube","few dashes water"]],
+["Paradise","All day","cocktail","shake & strain",[["Gin","S",3.5],["Apricot brandy","L",2],["Orange juice","J",1.5]],[]],
+["Piña Colada","Longdrink","hurricane","blend",[["White rum","S",3],["Pineapple juice","J",9],["Coconut milk","D",3]],[]],
+["Pisco Sour","All day","flute","shake & strain",[["Pisco","S",4.5],["Lemon juice","C",3],["Sugar syrup","Y",2],["Egg white","D",3,1]],["Angostura on top"]],
+["Planter's Punch","Longdrink","large glass","",[["Dark rum","S",4.5],["Orange juice","J",3.5],["Pineapple juice","J",3.5],["Lemon juice","C",2],["Grenadine","Y",1],["Sugar syrup","Y",1]],["3–4 dashes Angostura"]],
+["Porto Flip","After dinner","cocktail","shake & strain",[["Brandy","S",1.5],["Red port","W",4.5],["Egg yolk","D",1,1]],[]],
+["Ramos Fizz","Longdrink","highball","dry shake, hard shake & strain",[["Gin","S",4.5],["Lime juice","C",1.5],["Lemon juice","C",1.5],["Sugar syrup","Y",3],["Cream","D",6],["Egg white","D",3,1],["Soda water","M",3,1]],["3 dashes orange flower water","vanilla extract"]],
+["Rose","","cocktail","stir & strain",[["Kirsch","S",2],["Dry vermouth","W",4]],["3 dashes strawberry syrup"]],
+["Russian Spring Punch","Sparkling","highball","shake",[["Vodka","S",2.5],["Lemon juice","C",2.5],["Crème de cassis","L",1.5],["Sugar syrup","Y",1],["Sparkling wine","W",6,1]],[]],
+["Rusty Nail","After dinner","old-fashioned","stir gently",[["Scotch whisky","S",4.5],["Drambuie","L",2.5]],[]],
+["Sazerac","After dinner","old-fashioned","stir & strain",[["Cognac","S",5],["Absinthe","S",1]],["sugar cube","2 dashes Peychaud's"]],
+["Screwdriver","All day","highball","stir",[["Vodka","S",5],["Orange juice","J",10]],[]],
+["Sea Breeze","Longdrink","rocks","build",[["Vodka","S",4],["Cranberry juice","J",12],["Grapefruit juice","J",3]],[]],
+["Sex on the Beach","Longdrink","highball","build",[["Vodka","S",4],["Peach schnapps","L",2],["Cranberry juice","J",4],["Orange juice","J",4]],[]],
+["Sidecar","All day","cocktail","shake & strain",[["Cognac","S",5],["Triple sec","L",2],["Lemon juice","C",2]],[]],
+["Singapore Sling","Longdrink","highball","shake & strain",[["Gin","S",3],["Cherry liqueur","L",1.5],["Cointreau","L",0.75],["Bénédictine","L",0.75],["Pineapple juice","J",12],["Lime juice","C",1.5],["Grenadine","Y",1]],["dash of Angostura"]],
+["Spritz Veneziano","Sparkling","old-fashioned","build",[["Prosecco","W",6],["Aperol","L",4],["Soda water","M",3,1]],[]],
+["Stinger","After dinner","cocktail","stir & strain",[["Cognac","S",5],["Crème de menthe (white)","L",2]],[]],
+["Tequila Sunrise","Longdrink","highball","pour, do not stir",[["Tequila","S",4.5],["Orange juice","J",9],["Grenadine","Y",1.5]],[]],
+["Tommy's Margarita","All day","cocktail","shake & strain",[["Tequila","S",4.5],["Lime juice","C",1.5],["Agave nectar","Y",1,1]],[]],
+["Tuxedo","All day","cocktail","stir & strain",[["Old Tom gin","S",3],["Dry vermouth","W",3]],["½ bar spoon maraschino","¼ bar spoon absinthe","3 dashes orange bitters"]],
+["Vampiro","","highball","shake & strain",[["Silver tequila","S",5],["Tomato juice","J",7],["Orange juice","J",3],["Lime juice","C",1]],["1 tsp honey","chopped onion","chili slices","Worcestershire","salt"]],
+["Vesper","Before dinner","cocktail","shake & strain",[["Gin","S",6],["Vodka","S",1.5],["Lillet Blonde","W",0.75]],["lemon twist"]],
+["Whiskey Sour","Before dinner","cocktail","shake & strain",[["Bourbon","S",4.5],["Lemon juice","C",3],["Sugar syrup","Y",1.5]],["dash of egg white"]],
+["White Lady","All day","cocktail","shake & strain",[["Gin","S",4],["Triple sec","L",3],["Lemon juice","C",2]],[]],
+["Yellow Bird","All day","cocktail","shake & strain",[["White rum","S",3],["Galliano","L",1.5],["Triple sec","L",1.5],["Lime juice","C",1.5]],[]]
+];
+
+// Scraped from iba-world.com, ml converted to cl
+const IBA = [
+["Alexander", "Unforgettables", "", "", [["Cognac", "S", 3.0], ["Crème de cacao (brown)", "L", 3.0], ["Cream", "D", 3.0]], []],
+["Americano", "Unforgettables", "", "", [["Campari", "L", 3.0], ["Sweet red vermouth", "W", 3.0], ["Soda water", "M", 3, 1]], []],
+["Angel Face", "Unforgettables", "", "", [["Gin", "S", 3.0], ["Apricot brandy", "L", 3.0], ["Calvados", "S", 3.0]], []],
+["Aviation", "Unforgettables", "", "", [["Gin", "S", 4.5], ["Maraschino", "L", 1.5], ["Lemon juice", "C", 1.5], ["Crème de violette", "L", 0.5, 1]], []],
+["Bee's Knees", "New Era", "", "", [["Dry gin", "S", 5.25], ["Honey syrup", "Y", 1, 1], ["Lemon juice", "C", 2.25], ["Orange juice", "J", 2.25]], []],
+["Bellini", "Contemporary", "", "", [["Prosecco", "W", 10.0], ["White peach puree", "J", 5.0]], []],
+["Between the Sheets", "Unforgettables", "", "", [["White rum", "S", 3.0], ["Cognac", "S", 3.0], ["Triple sec", "L", 3.0], ["Lemon juice", "C", 2.0]], []],
+["Black Russian", "Contemporary", "", "", [["Vodka", "S", 5.0], ["Coffee liqueur", "L", 2.0]], []],
+["Bloody Mary", "Contemporary", "", "", [["Vodka", "S", 4.5], ["Tomato juice", "J", 9.0], ["Lemon juice", "C", 1.5]], ["2 dashes Worcestershire sauce", "Tabasco, celery salt, pepper (up to taste)"]],
+["Boulevardier", "Unforgettables", "", "", [["Bourbon or rye whiskey", "S", 4.5], ["Campari", "L", 3.0], ["Sweet red vermouth", "W", 3.0]], []],
+["Bramble", "New Era", "", "", [["Gin", "S", 5.0], ["Lemon juice", "C", 2.5], ["Sugar syrup", "Y", 1.25], ["Crème de mûre", "L", 1.5]], []],
+["Brandy Crusta", "Unforgettables", "", "", [["Brandy", "S", 5.25], ["Maraschino", "L", 0.75], ["Curaçao", "L", 0.5, 1], ["Lemon juice", "C", 1.5], ["Simple syrup", "Y", 0.5, 1]], ["2 dashes aromatic bitters"]],
+["Caipirinha", "Contemporary", "", "", [["Cachaça", "S", 6.0]], ["1 lime cut into small wedges", "4 teaspoons white cane sugar"]],
+["Canchanchara", "New Era", "", "", [["Cuban aguardiente", "S", 6.0], ["Lime juice", "C", 1.5], ["Raw honey", "Y", 1.5], ["Water", "M", 5.0]], []],
+["Cardinale", "Contemporary", "", "", [["Gin", "S", 4.0], ["Dry vermouth", "W", 2.0], ["Campari", "L", 1.0]], []],
+["Casino", "Unforgettables", "", "", [["Old Tom gin", "S", 4.0], ["Maraschino", "L", 1.0], ["Lemon juice", "C", 1.0]], ["2 dashes orange bitters"]],
+["Champagne Cocktail", "Contemporary", "", "", [["Champagne", "W", 9.0], ["Cognac", "S", 1.0]], ["2 dashes Angostura bitters", "few drops of Grand Marnier (optional)", "1 sugar cube"]],
+["Chartreuse Swizzle", "New Era", "", "", [["Green Chartreuse", "L", 4.5], ["Pineapple juice", "J", 3.0], ["Lime juice", "C", 2.25], ["Falernum", "L", 1.5]], []],
+["Clover Club", "Unforgettables", "", "", [["Gin", "S", 4.5], ["Raspberry syrup", "Y", 1.5], ["Lemon juice", "C", 1.5]], ["few drops of egg white"]],
+["Corpse Reviver #2", "Contemporary", "", "", [["Gin", "S", 3.0], ["Cointreau", "L", 3.0], ["Lillet Blanc", "W", 3.0], ["Lemon juice", "C", 3.0]], ["1 dash absinthe"]],
+["Cosmopolitan", "Contemporary", "", "", [["Vodka citron", "S", 4.0], ["Cointreau", "L", 1.5], ["Lime juice", "C", 1.5], ["Cranberry juice", "J", 3.0]], []],
+["Cuba Libre", "Contemporary", "", "", [["White rum", "S", 5.0], ["Cola", "M", 12.0], ["Lime juice", "C", 1.0]], []],
+["Daiquiri", "Unforgettables", "", "", [["White Cuban ron", "S", 6.0], ["Lime juice", "C", 2.0]], ["2 bar spoons superfine sugar"]],
+["Dark 'N' Stormy", "New Era", "", "", [["Goslings rum", "S", 6.0], ["Ginger beer", "M", 10.0]], []],
+["Don's Special Daiquiri", "New Era", "", "", [["Gold Jamaican rum", "S", 3.0], ["Cuban rum", "S", 1.5], ["Passion fruit syrup", "Y", 1.5], ["Lime juice", "C", 1.5], ["Honey syrup", "Y", 1.5]], []],
+["Dry Martini", "Unforgettables", "", "", [["Gin", "S", 6.0], ["Dry vermouth", "W", 1.0]], []],
+["Espresso Martini", "New Era", "", "", [["Vodka", "S", 5.0], ["Kahlúa", "L", 3.0], ["Sugar syrup", "Y", 1.0], ["Espresso", "D", 3, 1]], []],
+["Fernandito", "New Era", "", "", [["Fernet Branca", "L", 5.0], ["Cola", "M", 10, 1]], []],
+["French 75", "Contemporary", "", "", [["Gin", "S", 3.0], ["Lemon juice", "C", 1.5], ["Sugar syrup", "Y", 1.5], ["Champagne", "W", 6.0]], []],
+["French Connection", "Contemporary", "", "", [["Cognac", "S", 3.5], ["Amaretto", "L", 3.5]], []],
+["French Martini", "New Era", "", "", [["Vodka", "S", 4.5], ["Raspberry liqueur", "L", 1.5], ["Pineapple juice", "J", 1.5]], []],
+["Garibaldi", "Contemporary", "", "", [["Campari", "L", 4.5], ["Orange juice", "J", 12.0]], []],
+["Gin Basil Smash", "New Era", "", "", [["Gin", "S", 6.0], ["Lemon juice", "C", 2.25], ["Sugar syrup", "Y", 2.25]], ["10 pcs Italian basil leaves"]],
+["Gin Fizz", "Unforgettables", "", "", [["Gin", "S", 4.5], ["Lemon juice", "C", 3.0], ["Simple syrup", "Y", 1.0], ["Soda water", "M", 3, 1]], []],
+["Grand Margarita", "New Era", "", "", [["Tequila", "S", 4.5], ["Grand Marnier", "L", 3.0], ["Lime juice", "C", 1.5]], []],
+["Grasshopper", "Contemporary", "", "", [["Crème de cacao (white)", "L", 2.0], ["Crème de menthe (green)", "L", 2.0], ["Cream", "D", 2.0]], []],
+["Hanky Panky", "Unforgettables", "", "", [["London dry gin", "S", 4.5], ["Sweet red vermouth", "W", 4.5], ["Fernet", "L", 0.75]], []],
+["Hemingway Special", "Contemporary", "", "", [["Rum", "S", 6.0], ["Grapefruit juice", "J", 4.0], ["Maraschino", "L", 1.5], ["Lime juice", "C", 1.5]], []],
+["Horse's Neck", "Contemporary", "", "", [["Cognac", "S", 4.0], ["Ginger ale", "M", 12.0]], ["dash of Angostura bitters (optional)"]],
+["IBA Tiki", "New Era", "", "", [["Ron profundo Havana Club", "S", 3.0], ["Ron smoky Havana Club", "S", 3.0], ["Licor amaretto", "L", 1.5], ["Licor Frangelico", "L", 0.5], ["Passion fruit puree", "J", 3.0], ["Pineapple juice", "J", 9.0], ["Lime juice", "C", 3.0]], ["5 drops maraschino", "1 pc ginger slice"]],
+["Illegal", "New Era", "", "", [["Espadin mezcal", "S", 3.0], ["Jamaica overproof white rum", "S", 1.5], ["Falernum", "L", 1.5], ["Maraschino", "L", 0.5, 1], ["Lime juice", "C", 2.25], ["Simple syrup", "Y", 1.5]], ["few drops of egg white (optional)"]],
+["Irish Coffee", "Contemporary", "", "", [["Irish whiskey", "S", 5.0], ["Hot coffee", "D", 12.0], ["Cream (chilled)", "D", 5.0]], ["1 teaspoon sugar"]],
+["John Collins", "Unforgettables", "", "", [["Gin", "S", 4.5], ["Lemon juice", "C", 3.0], ["Simple syrup", "Y", 1.5], ["Soda water", "M", 6.0]], []],
+["Jungle Bird", "New Era", "", "", [["Blackstrap rum", "S", 4.5], ["Campari", "L", 2.25], ["Pineapple juice", "J", 4.5], ["Lime juice", "C", 1.5], ["Demerara sugar syrup", "Y", 1.5]], []],
+["Kir", "Contemporary", "", "", [["Dry white wine", "W", 9.0], ["Crème de cassis", "L", 1.0]], []],
+["Last Word", "Unforgettables", "", "", [["Gin", "S", 2.25], ["Green Chartreuse", "L", 2.25], ["Maraschino", "L", 2.25], ["Lime juice", "C", 2.25]], []],
+["Lemon Drop Martini", "Contemporary", "", "", [["Vodka", "S", 3.0], ["Triple sec", "L", 2.0], ["Lemon juice", "C", 1.5]], []],
+["Long Island Iced Tea", "Contemporary", "", "", [["Vodka", "S", 1.5], ["Tequila", "S", 1.5], ["White rum", "S", 1.5], ["Gin", "S", 1.5], ["Cointreau", "L", 1.5], ["Lemon juice", "C", 2.5], ["Simple syrup", "Y", 3.0], ["Cola", "M", 3, 1]], []],
+["Mai-Tai", "Contemporary", "", "", [["Amber Jamaican rum", "S", 3.0], ["Martinique molasses rhum", "S", 3.0], ["Orange curacao", "L", 1.5], ["Orgeat syrup (almond)", "Y", 1.5], ["Lime juice", "C", 3.0], ["Simple syrup", "Y", 0.75]], []],
+["Manhattan", "Unforgettables", "", "", [["Rye whiskey", "S", 5.0], ["Sweet red vermouth", "W", 2.0]], ["1 dash Angostura bitters"]],
+["Margarita", "Contemporary", "", "", [["Tequila", "S", 5.0], ["Triple sec", "L", 2.0], ["Lime juice", "C", 1.5]], []],
+["Martinez", "Unforgettables", "", "", [["London dry gin", "S", 4.5], ["Sweet red vermouth", "W", 4.5], ["Maraschino", "L", 0.5, 1]], ["2 dashes orange bitters"]],
+["Mary Pickford", "Unforgettables", "", "", [["White rum", "S", 4.5], ["Pineapple juice", "J", 4.5], ["Maraschino", "L", 0.75], ["Grenadine syrup", "Y", 0.5]], []],
+["Mimosa", "Contemporary", "", "", [["Orange juice", "J", 7.5], ["Prosecco", "W", 7.5]], []],
+["Mint Julep", "Contemporary", "", "", [["Bourbon whiskey", "S", 6.0], ["Water", "M", 1, 1]], ["4 fresh mint sprigs", "1 tsp powdered sugar"]],
+["Missionary's Downfall", "New Era", "", "", [["White rum", "S", 3.0], ["Peach brandy", "L", 1.5], ["Lime juice", "C", 1.5], ["Honey mix", "Y", 3.0]], ["10 pcs mint leaves", "3 to 4 pcs pineapple chunks"]],
+["Mojito", "Contemporary", "", "", [["White Cuban ron", "S", 4.5], ["Lime juice", "C", 2.0], ["Soda water", "M", 4, 1]], ["6 pcs mint sprigs", "2 tsp white cane sugar"]],
+["Monkey Gland", "Unforgettables", "", "", [["Dry gin", "S", 4.5], ["Orange juice", "J", 4.5], ["Absinthe", "S", 1.5, 1], ["Grenadine", "Y", 1.5, 1]], []],
+["Moscow Mule", "Contemporary", "", "", [["Smirnoff vodka", "S", 4.5], ["Ginger beer", "M", 12.0], ["Lime juice", "C", 1.0]], []],
+["Naked and Famous", "New Era", "", "", [["Mezcal", "S", 2.25], ["Yellow Chartreuse", "L", 2.25], ["Aperol", "L", 2.25], ["Lime juice", "C", 2.25]], []],
+["Negroni", "Unforgettables", "", "", [["Gin", "S", 3.0], ["Campari", "L", 3.0], ["Sweet red vermouth", "W", 3.0]], []],
+["New York Sour", "New Era", "", "", [["Rye whiskey or bourbon", "S", 6.0], ["Simple syrup", "Y", 2.25], ["Lemon juice", "C", 3.0], ["Red wine (Shiraz or Malbec)", "W", 1.5]], ["few drops of egg white"]],
+["Old Cuban", "New Era", "", "", [["Aged rum", "S", 4.5], ["Lime juice", "C", 2.25], ["Simple syrup", "Y", 3.0], ["Brut Champagne or Prosecco", "W", 6.0]], ["6/8 pcs mint leaves", "2 dashes Angostura bitters"]],
+["Old Fashioned", "Unforgettables", "", "", [["Bourbon or rye whiskey", "S", 4.5]], ["1 sugar cube", "few dashes Angostura bitters", "few dashes plain water"]],
+["Paloma", "New Era", "", "", [["Tequila", "S", 5.0], ["Lime", "C", 0.5], ["Pink grapefruit soda", "M", 10.0]], ["a pinch of salt"]],
+["Paper Plane", "New Era", "", "", [["Bourbon whiskey", "S", 3.0], ["Amaro Nonino", "L", 3.0], ["Aperol", "L", 3.0], ["Lemon juice", "C", 3.0]], []],
+["Paradise", "Unforgettables", "", "", [["Gin", "S", 3.0], ["Apricot brandy", "L", 2.0], ["Orange juice", "J", 1.5]], []],
+["Penicillin", "New Era", "", "", [["Blended scotch whisky", "S", 6.0], ["Lagavulin 16y", "S", 0.75], ["Lemon juice", "C", 2.25], ["Honey syrup", "Y", 2.25]], ["2-3 quarter size sliced fresh ginger"]],
+["Pina Colada", "Contemporary", "", "", [["White rum", "S", 5.0], ["Coconut cream", "D", 3.0], ["Pineapple juice", "J", 5.0]], []],
+["Pisco Punch", "New Era", "", "", [["Pisco", "S", 6.0], ["Pineapple juice", "J", 2.25], ["Simple syrup", "Y", 1.5], ["Lemon juice", "C", 1.5], ["Dry white wine", "W", 3.0]], ["3 pcs cloves"]],
+["Pisco Sour", "Contemporary", "", "", [["Pisco", "S", 6.0], ["Lemon juice", "C", 3.0], ["Simple syrup", "Y", 2.0], ["Egg white", "D", 3, 1]], []],
+["Planters Punch", "Unforgettables", "", "", [["Jamaican rum", "S", 4.5], ["Lime juice", "C", 1.5], ["Sugar cane juice", "Y", 3.0]], []],
+["Porn Star Martini", "New Era", "", "", [["Vanilla vodka", "S", 5.0], ["Passion fruit liqueur", "L", 2.0], ["Passion fruit puree", "J", 5.0], ["Champagne (on the side)", "W", 5.0]], ["2 bar spoons vanilla sugar"]],
+["Porto Flip", "Unforgettables", "", "", [["Brandy", "S", 1.5], ["Red tawny port wine", "W", 4.5], ["Egg yolk", "D", 1.0]], []],
+["Rabo de Galo", "Contemporary", "", "", [["Cachaca", "S", 6.0], ["Sweet vermouth Cinzano Rosso", "W", 2.0], ["Cynar", "L", 1.5]], ["2 drops Angostura (optional)"]],
+["Ramos Fizz", "Unforgettables", "", "", [["Gin", "S", 4.5], ["Lime juice", "C", 1.5], ["Lemon juice", "C", 1.5], ["Sugar syrup", "Y", 3.0], ["Cream", "D", 6.0], ["Egg white", "D", 3.0], ["Soda water", "M", 3, 1]], ["3 dashes orange flower water", "2 drops vanilla extract"]],
+["Remember the Maine", "Unforgettables", "", "", [["Rye whiskey", "S", 6.0], ["Sweet vermouth", "W", 2.25], ["Cherry brandy Luxardo", "L", 1.5], ["Absinthe", "S", 0.75]], []],
+["Russian Spring Punch", "New Era", "", "", [["Vodka", "S", 2.5], ["Lemon juice", "C", 2.5], ["Creme de cassis", "L", 1.5], ["Sugar syrup", "Y", 1.0], ["Sparkling wine", "W", 6, 1]], []],
+["Rusty Nail", "Unforgettables", "", "", [["Scotch whisky", "S", 4.5], ["Drambuie", "L", 2.5]], []],
+["Sazerac", "Unforgettables", "", "", [["Cognac", "S", 5.0], ["Absinthe", "S", 1.0]], ["1 sugar cube", "2 dashes Peychaud's bitters"]],
+["Sea Breeze", "Contemporary", "", "", [["Vodka", "S", 4.0], ["Cranberry juice", "J", 12.0], ["Grapefruit juice", "J", 3.0]], []],
+["Sex on the Beach", "Contemporary", "", "", [["Vodka", "S", 4.0], ["Peach schnapps", "L", 2.0], ["Orange juice", "J", 4.0], ["Cranberry juice", "J", 4.0]], []],
+["Sherry Cobbler", "New Era", "", "", [["Amontillado sherry", "W", 4.5], ["Palo cortado", "W", 4.5]], ["1 tsp superfine sugar (or granulated)", "1/2  orange wheel", "1/2  lemon wheel"]],
+["Sidecar", "Unforgettables", "", "", [["Cognac", "S", 5.0], ["Triple sec", "L", 2.0], ["Lemon juice", "C", 2.0]], []],
+["Singapore Sling", "Contemporary", "", "", [["Gin", "S", 3.0], ["Cherry Sangue Morlacco", "L", 1.5], ["Cointreau", "L", 0.75], ["DOM bénédictine", "L", 0.75], ["Pineapple juice", "J", 12.0], ["Lime juice", "C", 1.5], ["Grenadine syrup", "Y", 1.0]], ["a dash of Angostura bitters"]],
+["South Side", "New Era", "", "", [["London dry gin", "S", 6.0], ["Lemon juice", "C", 3.0], ["Simple syrup", "Y", 1.5]], ["5/6 mint leaves", "few drops egg white (optional)"]],
+["Spicy Fifty", "New Era", "", "", [["Vodka vanilla", "S", 5.0], ["Elderflower cordial", "Y", 1.5], ["Lime juice", "C", 1.5], ["Monin honey syrup", "Y", 1.0]], ["2 thin slices red chili pepper"]],
+["Spritz", "New Era", "", "", [["Prosecco", "W", 9.0], ["Aperol", "L", 6.0], ["Soda water", "M", 3, 1]], []],
+["Stinger", "Unforgettables", "", "", [["Cognac", "S", 5.0], ["White crème de menthe", "L", 2.0]], []],
+["Suffering Bastard", "New Era", "", "", [["Cognac or brandy", "S", 3.0], ["Gin", "S", 3.0], ["Lime juice", "C", 1.5], ["Ginger beer", "M", 9, 1]], ["2 dashes Angostura bitters"]],
+["Tequila Sunrise", "Contemporary", "", "", [["Tequila", "S", 4.5], ["Orange juice", "J", 9.0], ["Grenadine syrup", "Y", 1.5]], []],
+["Three Dots and a Dash", "New Era", "", "", [["Rhum Martinique agricole", "S", 4.5], ["Blended aged rum", "S", 1.5], ["Falernum", "L", 0.75], ["Allspice dram", "L", 0.75], ["Lime juice", "C", 1.5], ["Orange juice", "J", 1.5], ["Honey syrup", "Y", 1.5]], ["2 dashes Angostura bitters"]],
+["Tipperary", "New Era", "", "", [["Irish whiskey", "S", 5.0], ["Sweet red vermouth", "W", 2.5], ["Green Chartreuse", "L", 1.5]], ["2 dashes Angostura bitters"]],
+["Tommy's Margarita", "New Era", "", "", [["Tequila", "S", 6.0], ["Lime juice", "C", 3.0], ["Agave nectar", "Y", 3.0]], []],
+["Trinidad Sour", "New Era", "", "", [["Angostura bitters", "L", 4.5], ["Orgeat syrup", "Y", 3.0], ["Lemon juice", "C", 2.25], ["Rye whiskey", "S", 1.5]], []],
+["Tuxedo", "Unforgettables", "", "", [["Old Tom gin", "S", 3.0], ["Dry vermouth", "W", 3.0]], ["1/2 bar spoon maraschino", "1/4 bar spoon of absinthe", "3 dashes orange bitters"]],
+["Ve.N.To", "New Era", "", "", [["White smooth grappa", "S", 4.5], ["Lemon juice", "C", 2.25], ["Chamomile honey mix", "Y", 1.5], ["Chamomile cordial", "Y", 1.5]], ["few drops of egg white (optional)"]],
+["Vesper", "Contemporary", "", "", [["Gin", "S", 4.5], ["Vodka", "S", 1.5], ["Lillet Blanc", "W", 0.75]], []],
+["Vieux Carré", "Unforgettables", "", "", [["Rye whiskey", "S", 3.0], ["Cognac", "S", 3.0], ["Sweet vermouth", "W", 3.0], ["Bénédictine", "L", 0.5, 1]], ["2 dashes Peychaud's bitters"]],
+["Whiskey Sour", "Unforgettables", "", "", [["Bourbon whiskey", "S", 4.5], ["Lemon juice", "C", 2.5], ["Sugar syrup", "Y", 2.0]], ["few drops of egg white (optional)"]],
+["White Lady", "Unforgettables", "", "", [["Gin", "S", 4.0], ["Triple sec", "L", 3.0], ["Lemon juice", "C", 2.0]], []],
+["Zombie", "Contemporary", "", "", [["Jamaican dark rum", "S", 4.5], ["Gold Puerto Rican rum", "S", 4.5], ["Demerara rum", "S", 3.0], ["Lime juice", "C", 2.0], ["Falernum", "L", 1.5], ["Donn's mix", "Y", 1.5], ["Grenadine", "Y", 0.5, 1]], ["1 dash Angostura bitters", "6 drops Pernod"]]
+];
+
+const prep = rows => rows.map(([name, kind, glass, method, ings, extras]) => {
+  ings = ings.map(([label, cls, cl, est]) => ({ label, cls, cl, est: !!est }))
+             .sort((a, b) => ORDER[a.cls] - ORDER[b.cls]);
+  const total = ings.reduce((s, i) => s + i.cl, 0);
+  const share = {};
+  ings.forEach(i => share[i.cls] = (share[i.cls] || 0) + i.cl / total);
+  const text = (name + " " + ings.map(i => i.label).join(" ") + " " + extras.join(" ")).toLowerCase();
+  return { name, kind, glass, method, ings, extras, total, share, text };
+});
+const LISTS = { iba: prep(IBA), iib: prep(IIB) };
+let DATA = LISTS.iba;
+let view = "iba";
+const key = n => n.normalize("NFKD").replace(/[^a-zA-Z0-9]/g, "").toLowerCase().replace("spritzveneziano", "spritz");
+const PAIRS = (() => {
+  const byKey = new Map(LISTS.iib.map(d => [key(d.name), d]));
+  return LISTS.iba.filter(d => byKey.has(key(d.name))).map(a => {
+    const b = byKey.get(key(a.name));
+    // share of the drink that moves between ingredient types
+    const diff = CLASSES.reduce((s, [k]) => s + Math.abs((a.share[k] || 0) - (b.share[k] || 0)), 0) / 2;
+    return { a, b, diff, name: a.name };
+  });
+})();
+const MAX = Math.max(...[...LISTS.iba, ...LISTS.iib].map(d => d.total));
+const fmt = n => String(+n.toFixed(2));
+const pct = n => Math.round(n * 100) + "%";
+
+const state = { mode: "share", sort: "name", cls: null, q: "" };
+const grid = document.getElementById("grid");
+const tip = document.getElementById("tip");
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+function legend() {
+  const box = document.getElementById("legend");
+  CLASSES.forEach(([k, label]) => {
+    const b = el("button", "chip");
+    b.type = "button"; b.dataset.k = k; b.setAttribute("aria-pressed", "false");
+    const sw = el("span", "sw"); sw.style.background = `var(--c-${k})`;
+    b.append(sw, label);
+    b.onclick = () => { state.cls = state.cls === k ? null : k; render(); };
+    box.append(b);
+  });
+  const n = el("span", "note");
+  n.append(el("span", "sw hatch"), "estimated top-up");
+  box.append(n);
+}
+
+function card(d) {
+  const c = el("article", "card");
+  const top = el("div", "top");
+  top.append(el("h2", "name", d.name));
+  if (d.kind) top.append(el("span", "kind", d.kind));
+  top.append(el("span", "vol", fmt(d.total) + " cl"));
+
+  const p = ingOf(d);
+  c.title = [d.glass && d.glass + " glass", d.method].filter(Boolean).join(" · ");
+  c.append(top, barOf(d), p);
+  return c;
+}
+
+function barOf(d) {
+  const track = el("div", "track");
+  const bar = el("div", "bar");
+  bar.style.width = state.mode === "vol" ? (d.total / MAX * 100) + "%" : "100%";
+  bar.setAttribute("role", "img");
+  bar.setAttribute("aria-label", d.ings.map(i => `${i.label} ${pct(i.cl / d.total)}`).join(", "));
+  const gaps = (d.ings.length - 1) * 2;
+  d.ings.forEach(i => {
+    const s = el("div", "s" + (i.est ? " hatch" : "") + (state.cls === i.cls ? " on" : ""));
+    s.style.backgroundColor = `var(--c-${i.cls})`;
+    s.style.width = `calc((100% - ${gaps}px) * ${i.cl / d.total})`;
+    s.tabIndex = 0;
+    s.dataset.tip = JSON.stringify([i.label, `${i.est ? "about " : ""}${fmt(i.cl)} cl · ${pct(i.cl / d.total)}`, LABEL[i.cls] + (i.est ? " · estimated" : "")]);
+    bar.append(s);
+  });
+  track.append(bar);
+  return track;
+}
+
+function ingOf(d) {
+  const p = el("p", "ing");
+  d.ings.forEach((i, n) => {
+    const it = el("span", "it");
+    const dot = el("span", "dot"); dot.style.background = `var(--c-${i.cls})`;
+    it.append(dot, el("b", "", (i.est ? "~" : "") + fmt(i.cl)), " " + i.label);
+    p.append(it, n < d.ings.length - 1 ? " · " : "");
+  });
+  if (d.extras.length) p.append(el("span", "tr", " + " + d.extras.join(", ")));
+  return p;
+}
+
+function pairCard(pr) {
+  const c = el("article", "pair");
+  const head = el("div", "head");
+  head.append(el("h2", "name", pr.name));
+  const pc = Math.round(pr.diff * 100);
+  head.append(el("span", "diff" + (pc ? "" : " same"), pc ? `${pc}% of the drink shifts` : pr.a.total === pr.b.total ? "Same proportions" : "Same proportions, different size"));
+  c.append(head);
+  [["IBA site", pr.a], ["IIB sheet", pr.b]].forEach(([label, d]) => {
+    const side = el("div", "side");
+    const lab = el("div", "lab");
+    lab.append(el("span", "", label), el("span", "vol", fmt(d.total) + " cl"));
+    side.append(lab, barOf(d), ingOf(d));
+    c.append(side);
+  });
+  return c;
+}
+
+function render() {
+  const k = state.cls || "S";
+  document.getElementById("sortShare").textContent = LABEL[k].split(/,| &/)[0] + " share";
+  document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === state.cls)));
+  ["mode", "sort"].forEach(g => document.querySelectorAll(`#${g} button`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state[g]))));
+
+  const cmp = view === "cmp";
+  document.getElementById("sortDiff").hidden = !cmp;
+  grid.classList.toggle("cmp", cmp);
+  grid.classList.toggle("hl", !!state.cls);
+  if (cmp) {
+    let prs = PAIRS.filter(p => (!state.cls || p.a.share[state.cls] || p.b.share[state.cls]) && (!state.q || p.a.text.includes(state.q) || p.b.text.includes(state.q)));
+    if (state.sort === "size") prs = [...prs].sort((x, y) => y.a.total - x.a.total);
+    if (state.sort === "share") prs = [...prs].sort((x, y) => (y.a.share[k] || 0) - (x.a.share[k] || 0) || x.name.localeCompare(y.name));
+    if (state.sort === "diff") prs = [...prs].sort((x, y) => y.diff - x.diff || x.name.localeCompare(y.name));
+    grid.replaceChildren(...prs.map(pairCard));
+    if (!prs.length) grid.append(el("p", "empty", "No cocktail matches. Clear the search or the ingredient filter."));
+    document.getElementById("count").textContent = prs.length === PAIRS.length ? `${PAIRS.length} shared cocktails` : `${prs.length} of ${PAIRS.length}`;
+    return;
+  }
+  let rows = DATA.filter(d => (!state.cls || d.share[state.cls]) && (!state.q || d.text.includes(state.q)));
+  if (state.sort === "size") rows = [...rows].sort((a, b) => b.total - a.total);
+  if (state.sort === "share") rows = [...rows].sort((a, b) => (b.share[k] || 0) - (a.share[k] || 0) || a.name.localeCompare(b.name));
+
+  grid.replaceChildren(...rows.map(card));
+  if (!rows.length) grid.append(el("p", "empty", "No cocktail matches. Clear the search or the ingredient filter."));
+  document.getElementById("count").textContent = rows.length === DATA.length ? `${DATA.length} cocktails` : `${rows.length} of ${DATA.length}`;
+}
+
+["mode", "sort"].forEach(g => document.getElementById(g).addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state[g] = b.dataset.v; render();
+}));
+document.getElementById("list").addEventListener("change", e => setView(e.target.value));
+function setView(v) {
+  view = LISTS[v] || v === "cmp" ? v : "iba";
+  if (view === "cmp") state.sort = "diff";
+  else { DATA = LISTS[view]; if (state.sort === "diff") state.sort = "name"; }
+  render();
+}
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.trim().toLowerCase(); render(); });
+
+function showTip(s) {
+  const [a, b, c] = JSON.parse(s.dataset.tip);
+  tip.replaceChildren(el("b", "", a), el("br"), b, el("br"), el("span", "", c));
+  tip.hidden = false;
+  const r = s.getBoundingClientRect(), t = tip.getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(window.innerWidth - t.width - 8, r.left + r.width / 2 - t.width / 2)) + "px";
+  tip.style.top = (r.top - t.height - 6 < 8 ? r.bottom + 6 : r.top - t.height - 6) + "px";
+}
+grid.addEventListener("pointerover", e => { const s = e.target.closest(".s"); s ? showTip(s) : (tip.hidden = true); });
+grid.addEventListener("pointerleave", () => tip.hidden = true);
+grid.addEventListener("focusin", e => { const s = e.target.closest(".s"); if (s) showTip(s); });
+grid.addEventListener("focusout", () => tip.hidden = true);
+window.addEventListener("scroll", () => tip.hidden = true, { passive: true });
+
+legend();
+setView(document.getElementById("list").value);
+</script>
+</body>
+</html>
